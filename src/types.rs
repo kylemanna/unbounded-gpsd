@@ -253,6 +253,36 @@ pub struct SkyResponse {
     pub satellites: Vec<SatelliteObject>
 }
 #[derive(Serialize, Deserialize, Debug)]
+/// A PPS report (PPS) is emitted each time the daemon sees a valid PPS (Pulse Per Second) strobe
+/// from a device.
+///
+/// There are various sources of error in the reported clock times. The speed of the serial
+/// connection between the GPS and the system adds a delay to the start of cycle detection. An even
+/// bigger error is added by the variable computation time inside the GPS. Taken together the time
+/// derived from the start of the GPS cycle can have offsets of 10 milliseconds to 700 milliseconds
+/// and combined jitter and wander of 100 to 300 milliseconds.
+///
+/// See the NTP documentation for their definition of precision.
+pub struct PpsResponse {
+    /// Name of originating device.
+    pub device: String,
+    /// Seconds from the PPS source.
+    pub real_sec: u32,
+    /// Nanoseconds from the PPS source.
+    pub real_nsec: u32,
+    /// Seconds from the system clock
+    pub clock_sec: u32,
+    /// Nanoseconds from the system clock.
+    pub clock_nsec: u32,
+    /// NTP style estimate of PPS precision.
+    pub precision: i32,
+    /// SHM key of this PPS, not always present despite marked as "always" in gpsd docs.
+    pub shm: Option<String>,
+    #[serde(rename = "qErr")]
+    /// Quantization error of the PPS, in picoseconds. Sometimes called the "sawtooth" error.
+    pub q_err: Option<f32>
+}
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 /// Information about a device known to gpsd.
 ///
@@ -391,6 +421,8 @@ pub enum Response {
     Tpv(TpvResponse),
     #[serde(rename = "SKY")]
     Sky(SkyResponse),
+    #[serde(rename = "PPS")]
+    Pps(PpsResponse),
     #[serde(rename = "POLL")]
     /// Data from the last-seen fixes on all active GPS devices.
     Poll {
